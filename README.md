@@ -36,4 +36,3 @@ Qt 5 与 Qt 6 各通过 42 项 CTest，以及轨迹生成、显示、导出、�
 ![关于窗口](SurfacePathStudio/docs/validation-assets/about-dialog.png)
 
 第三方说明及许可文本见 [THIRD_PARTY_NOTICES](SurfacePathStudio/THIRD_PARTY_NOTICES.md)。
-原始功能要求保存在 [AGENT.md](AGENT.md)。

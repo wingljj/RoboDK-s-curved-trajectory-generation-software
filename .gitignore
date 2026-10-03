@@ -15,3 +15,4 @@ SurfacePathStudio/CMakeUserPresets.json
 *.zip
 *.user
 /icon.gif
+/AGENT.md
