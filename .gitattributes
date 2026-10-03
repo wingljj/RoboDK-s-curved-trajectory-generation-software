@@ -1,0 +1,15 @@
+* text=auto
+*.cpp text eol=lf
+*.h text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.ps1 text eol=crlf
+*.iss text eol=crlf
+*.rc text eol=crlf
+*.qrc text eol=lf
+*.step -text -diff
+*.stp -text -diff
+*.png -text
+*.jpg -text
+*.bmp -text
+*.ico -text

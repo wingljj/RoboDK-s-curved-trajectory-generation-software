@@ -1,0 +1,17 @@
+SurfacePathStudio/build*/
+SurfacePathStudio/cmake-build*/
+SurfacePathStudio/.deps/
+SurfacePathStudio/dist*/
+SurfacePathStudio/releases/
+SurfacePathStudio/CMakeUserPresets.json
+.vs/
+.idea/
+*.log
+*.exe
+*.dll
+*.lib
+*.obj
+*.pdb
+*.zip
+*.user
+/icon.gif

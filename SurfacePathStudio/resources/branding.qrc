@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/branding">
+    <file alias="casc-logo.jpg">casc-logo.jpg</file>
+    <file alias="casc.ico">casc.ico</file>
+  </qresource>
+</RCC>

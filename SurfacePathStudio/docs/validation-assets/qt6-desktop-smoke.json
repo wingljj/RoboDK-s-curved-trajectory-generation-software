@@ -1,0 +1,64 @@
+{
+    "aboutDialog": true,
+    "applicationVersion": "0.1.2",
+    "busyDropsRejected": true,
+    "cadEdgeDirection": true,
+    "continuousCsv": true,
+    "csvExport": true,
+    "ctrlMultiSelection": true,
+    "defaultPathDiagnostics": true,
+    "displayedObjects": [
+        {
+            "faceSensitiveEntities": -1,
+            "modes": [
+            ],
+            "state": -1,
+            "type": "AIS_Shape"
+        },
+        {
+            "faceSensitiveEntities": 2,
+            "modes": [
+                4
+            ],
+            "state": 1,
+            "type": "XCAFPrs_AISObject"
+        }
+    ],
+    "dropReplacesProject": true,
+    "escapeAndSelectionUndo": true,
+    "faceCount": 2,
+    "firstPickDiagnostics": {
+        "devicePixelRatio": 1.5,
+        "faceId": 1,
+        "ownerHasShape": true,
+        "pickedCount": 1,
+        "screen": [
+            483,
+            516
+        ],
+        "shapeType": 4,
+        "widget": [
+            876,
+            824
+        ]
+    },
+    "generatedTrajectoryAndNormals": true,
+    "invalidDropsRejected": true,
+    "maxSurfaceErrorMm": 5.9050552935138654e-08,
+    "mouseFaceSelection": true,
+    "passed": true,
+    "pathVisibility": true,
+    "pointCount": 499,
+    "productBranding": true,
+    "productName": "上海卫星装备研究所曲面轨迹生成软件",
+    "projectTreeAndUndo": true,
+    "qtVersion": "6.5.3",
+    "segmentCount": 17,
+    "stepDragDrop": true,
+    "stepImport": true,
+    "surfacePath": true,
+    "tangentFaces": true,
+    "tcpFrames": true,
+    "twoPointDirection": true,
+    "uiHeartbeats": 24
+}

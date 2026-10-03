@@ -1,0 +1,28 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {"major": 3, "minor": 20, "patch": 0},
+  "configurePresets": [
+    {
+      "name": "native-release",
+      "displayName": "Native Release (configure Qt/OCCT via environment or user preset)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/native-release",
+      "cacheVariables": {"CMAKE_BUILD_TYPE": "Release", "BUILD_TESTING": "ON"}
+    },
+    {
+      "name": "msvc2022",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/msvc2022",
+      "cacheVariables": {"BUILD_TESTING": "ON"}
+    }
+  ],
+  "buildPresets": [
+    {"name": "native-release", "configurePreset": "native-release"},
+    {"name": "msvc2022", "configurePreset": "msvc2022", "configuration": "Release"}
+  ],
+  "testPresets": [
+    {"name": "native-release", "configurePreset": "native-release", "output": {"outputOnFailure": true}},
+    {"name": "msvc2022", "configurePreset": "msvc2022", "configuration": "Release", "output": {"outputOnFailure": true}}
+  ]
+}
