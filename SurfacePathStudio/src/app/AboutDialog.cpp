@@ -158,6 +158,9 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
     addMetadata(0, tr("研发单位"), branding::organizationName(), "aboutOrganization");
     addMetadata(1, tr("研发部门"), branding::departmentName(), "aboutDepartment");
     addMetadata(2, tr("软件版本"), QCoreApplication::applicationVersion(), "aboutVersion");
+#ifdef SPS_WINDOWS7_COMPAT
+    addMetadata(3, tr("兼容构建"), tr("Windows 7 SP1 · 64 位"), "aboutCompatibility");
+#endif
     metadata->setColumnStretch(1, 1);
     layout->addLayout(metadata);
     layout->addStretch();

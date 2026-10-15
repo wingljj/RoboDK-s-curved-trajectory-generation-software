@@ -26,6 +26,8 @@
 #include <SelectMgr_Selection.hxx>
 #include <TColStd_ListOfInteger.hxx>
 #include <Image_PixMap.hxx>
+#include <Graphic3d_DiagnosticInfo.hxx>
+#include <TColStd_IndexedDataMapOfStringString.hxx>
 #include <QApplication>
 #include <QDialog>
 #include <QLabel>
@@ -44,6 +46,8 @@
 #include <QAction>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QOperatingSystemVersion>
+#include <QSysInfo>
 #include <QSaveFile>
 #include <QTimer>
 #include <QTreeWidgetItemIterator>
@@ -115,8 +119,26 @@ void MainWindow::runSmokeTest(const QString& outputDirectory) {
     smokeDirectory_=QDir(outputDirectory).absolutePath();
     QDir().mkpath(smokeDirectory_);
     smokeReport_=QJsonObject{{"passed",false},{"qtVersion",qVersion()},{"uiHeartbeats",0}};
+#ifdef SPS_WINDOWS7_COMPAT
+    smokeReport_["targetWindows"]="Windows7SP1";
+#else
+    smokeReport_["targetWindows"]="Windows10";
+#endif
+    const auto hostVersion=QOperatingSystemVersion::current();
+    smokeReport_["hostOsVersion"]=QStringLiteral("%1.%2.%3")
+        .arg(hostVersion.majorVersion()).arg(hostVersion.minorVersion()).arg(hostVersion.microVersion());
+    smokeReport_["hostOs"]=QSysInfo::prettyProductName();
+    smokeReport_["ranOnWindows7"]=hostVersion.type()==QOperatingSystemVersion::Windows
+        &&hostVersion.majorVersion()==6&&hostVersion.minorVersion()==1&&hostVersion.microVersion()>=7601;
     QTimer::singleShot(30000,this,[this]{if(!smokeDirectory_.isEmpty())smokeFailure("Desktop smoke test timed out");});
     try {
+        TColStd_IndexedDataMapOfStringString diagnostics;
+        viewer_->view()->DiagnosticInformation(diagnostics,Graphic3d_DiagnosticInfo_Device);
+        QJsonObject openGlDiagnostics;
+        for(int index=1;index<=diagnostics.Extent();++index)
+            openGlDiagnostics[QString::fromUtf8(diagnostics.FindKey(index).ToCString())]=
+                QString::fromUtf8(diagnostics.FindFromIndex(index).ToCString());
+        smokeReport_["openGlDiagnostics"]=openGlDiagnostics;
         const auto productName=QStringLiteral("上海卫星装备研究所曲面轨迹生成软件");
         require(QApplication::applicationDisplayName()==productName,"Application display name is not the requested product name");
         require(windowTitle().contains(productName),"Startup title does not contain the product name");
@@ -137,6 +159,10 @@ void MainWindow::runSmokeTest(const QString& outputDirectory) {
                 require(contents.contains(QStringLiteral("上海卫星装备研究所"))&&contents.contains(QStringLiteral("总装中心")),"About dialog research organization or department is missing");
                 require(contents.contains(QStringLiteral("CSV"))&&contents.contains(QStringLiteral("TCP"))&&contents.contains(QStringLiteral("STEP")),"About dialog feature description is missing");
                 require(contents.contains(QCoreApplication::applicationVersion()),"About dialog version is missing");
+#ifdef SPS_WINDOWS7_COMPAT
+                auto* compatibility=dialog->findChild<QLabel*>("aboutCompatibility");
+                require(compatibility&&compatibility->text()==QStringLiteral("Windows 7 SP1 · 64 位"),"About dialog compatibility build is missing");
+#endif
                 auto* logo=dialog->findChild<QLabel*>("aboutLogo");
                 require(logo&&logo->isVisible()&&!logo->property("pixmap").value<QPixmap>().isNull(),"About dialog logo is not displayed");
                 require(dialog->grab().save(smokeDirectory_+"/about-dialog.png"),"About screenshot could not be saved");

@@ -2,6 +2,8 @@
 param(
     [ValidateSet(5, 6)]
     [int]$QtMajor = 5,
+    [ValidateSet('Windows10', 'Windows7SP1')]
+    [string]$TargetWindows = 'Windows10',
     [string]$DistDirectory,
     [string]$OutputDirectory,
     [string]$InnoCompiler,
@@ -14,8 +16,14 @@ Set-StrictMode -Version Latest
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $applicationVersion = '0.1.2'
 $applicationName = '上海卫星装备研究所曲面轨迹生成软件'
+$isWindows7 = $TargetWindows -eq 'Windows7SP1'
+if ($isWindows7 -and $QtMajor -ne 5) { throw 'Windows7SP1 requires QtMajor 5.' }
+$introductionFile = '软件介绍.txt'
+if ($isWindows7) { $introductionFile = '软件介绍-Win7SP1.txt' }
+$introductionPath = Join-Path $projectRoot "installer\$introductionFile"
 if ([string]::IsNullOrWhiteSpace($DistDirectory)) {
-    $DistDirectory = Join-Path $projectRoot "dist-branding-qt$QtMajor"
+    if ($isWindows7) { $DistDirectory = Join-Path $projectRoot 'dist-win7-x64' }
+    else { $DistDirectory = Join-Path $projectRoot "dist-branding-qt$QtMajor" }
 }
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = Join-Path $projectRoot 'releases'
@@ -41,6 +49,56 @@ if ([string]$manifest.Qt -notmatch "^$QtMajor\.\d+\.\d+") {
 if ($manifest.Architecture -ne 'x64' -or $manifest.Configuration -ne 'Release') {
     throw 'Only x64 Release deployments can be packaged.'
 }
+$ucrtEntries = @()
+if ($isWindows7) {
+    foreach ($field in @('TargetWindows', 'MinimumWindowsVersion', 'ApplicationLocalUcrt', 'UcrtVersion', 'UcrtDllCount', 'UcrtSourceDirectory', 'ApplicationLocalUcrtFiles')) {
+        if (-not ($manifest.PSObject.Properties.Name -contains $field)) { throw "Win7 build-manifest.json is missing $field." }
+    }
+    if ($manifest.TargetWindows -ne 'Windows7SP1') { throw 'manifest.TargetWindows must be Windows7SP1.' }
+    if ($manifest.MinimumWindowsVersion -ne '6.1sp1') { throw 'manifest.MinimumWindowsVersion must be 6.1sp1.' }
+    if ($manifest.ApplicationLocalUcrt -isnot [bool] -or -not $manifest.ApplicationLocalUcrt) { throw 'manifest.ApplicationLocalUcrt must be true.' }
+    $ucrtEntries = @($manifest.ApplicationLocalUcrtFiles)
+    if ($ucrtEntries.Count -lt 40 -or $manifest.UcrtDllCount -ne $ucrtEntries.Count) {
+        throw 'Win7 requires the complete Windows SDK UCRT file set and a matching UcrtDllCount.'
+    }
+    $ucrtNames = @($ucrtEntries | ForEach-Object {
+        foreach ($field in @('Path', 'Sha256', 'Version')) {
+            if (-not ($_.PSObject.Properties.Name -contains $field)) { throw "ApplicationLocalUcrtFiles entry is missing $field." }
+        }
+        if ($_.Path -notmatch '^(ucrtbase\.dll|api-ms-win-(core|crt)-[a-z0-9]+-l[0-9]+-[0-9]+-[0-9]+\.dll)$') {
+            throw "Unapproved UCRT deployment path: $($_.Path)"
+        }
+        [string]$_.Path
+    })
+    if (@($ucrtNames | Sort-Object -Unique).Count -ne $ucrtNames.Count) { throw 'Duplicate UCRT deployment paths in build-manifest.json.' }
+    foreach ($essential in @('ucrtbase.dll', 'api-ms-win-crt-runtime-l1-1-0.dll', 'api-ms-win-core-file-l2-1-0.dll', 'api-ms-win-core-synch-l1-2-0.dll')) {
+        if ($ucrtNames -notcontains $essential) { throw "Required UCRT manifest entry is missing: $essential" }
+    }
+    # Compare the exact trusted SDK architecture directory, including its core forwarders.
+    if (-not (Test-Path -LiteralPath $manifest.UcrtSourceDirectory -PathType Container)) {
+        throw 'UcrtSourceDirectory must identify the original Microsoft Windows SDK UCRT directory.'
+    }
+    $sdkNames = @(Get-ChildItem -LiteralPath $manifest.UcrtSourceDirectory -File | Where-Object {
+        $_.Name -eq 'ucrtbase.dll' -or $_.Name -like 'api-ms-win-*.dll'
+    } | ForEach-Object Name)
+    if (@(Compare-Object $sdkNames $ucrtNames).Count -ne 0) { throw 'UCRT file set does not match the source Windows SDK directory.' }
+    foreach ($entry in $ucrtEntries) {
+        $path = Join-Path $distRoot $entry.Path
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Required UCRT deployment file is missing: $($entry.Path)" }
+        if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $entry.Sha256) { throw "UCRT SHA256 does not match: $($entry.Path)" }
+        if ((Get-FileHash -LiteralPath (Join-Path $manifest.UcrtSourceDirectory $entry.Path) -Algorithm SHA256).Hash -ne $entry.Sha256) {
+            throw "UCRT SHA256 does not match the source Windows SDK: $($entry.Path)"
+        }
+        $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($path)
+        $numericVersion = '{0}.{1}.{2}.{3}' -f $version.FileMajorPart, $version.FileMinorPart, $version.FileBuildPart, $version.FilePrivatePart
+        if ($numericVersion -ne $entry.Version) { throw "UCRT file version does not match: $($entry.Path)" }
+        if ($entry.Path -eq 'ucrtbase.dll' -and ($numericVersion -ne $manifest.UcrtVersion -or [version]$numericVersion -lt [version]'10.0.10240.16390')) {
+            throw 'UcrtVersion does not match a supported ucrtbase.dll.'
+        }
+    }
+} elseif (($manifest.PSObject.Properties.Name -contains 'TargetWindows') -and $manifest.TargetWindows -ne 'Windows10') {
+    throw 'The deployment target does not match TargetWindows Windows10.'
+}
 
 # Explicit runtime and plugin names; never include dist\* or recurse through user files.
 $requiredFiles = @(
@@ -54,6 +112,7 @@ $requiredFiles = @(
     'examples\models\bspline_trimmed.step', 'examples\models\adjacent_bspline.step',
     'examples\models\inner_hole.step'
 )
+if ($isWindows7) { $requiredFiles += @($ucrtEntries | ForEach-Object Path) }
 $optionalFiles = @(
     "Qt${QtMajor}Svg.dll", "Qt${QtMajor}Network.dll", "Qt${QtMajor}Pdf.dll",
     'concrt140.dll', 'vccorlib140.dll', 'msvcp140_1.dll', 'msvcp140_2.dll',
@@ -68,6 +127,7 @@ $optionalFiles = @(
     'imageformats\qtga.dll', 'imageformats\qtiff.dll', 'imageformats\qwbmp.dll',
     'imageformats\qwebp.dll', 'examples\README.md',
     'licenses\LICENSE.LGPLv3', 'licenses\LICENSE.GPLv3', 'licenses\LICENSE.GPLv2',
+    'licenses\sdk_license.rtf', 'licenses\sdk_third_party_notices.rtf',
     'docs\validation-assets\surface-path.csv',
     'docs\validation-assets\surface-path-xyz-normal.csv'
 )
@@ -127,12 +187,15 @@ foreach ($file in @('casc.ico', 'installer-wizard.bmp', 'installer-small.bmp')) 
         throw "Missing branding resource: resources\$file"
     }
 }
-if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'installer\软件介绍.txt') -PathType Leaf)) {
-    throw 'Missing installer\软件介绍.txt.'
+if (-not (Test-Path -LiteralPath $introductionPath -PathType Leaf)) {
+    throw "Missing installer\$introductionFile."
 }
 
 $outputBaseName = "$applicationName-$applicationVersion-Qt$QtMajor-x64-Setup"
-$packagingRoot = Join-Path $outputRoot "_packaging\Qt$QtMajor"
+if ($isWindows7) { $outputBaseName = "$applicationName-$applicationVersion-Win7SP1-Qt$QtMajor-x64-Setup" }
+$packagingSubdirectory = "Qt$QtMajor"
+if ($isWindows7) { $packagingSubdirectory = "$TargetWindows-Qt$QtMajor" }
+$packagingRoot = Join-Path $outputRoot "_packaging\$packagingSubdirectory"
 New-Item -ItemType Directory -Force -Path $packagingRoot | Out-Null
 $fileListPath = Join-Path $packagingRoot 'payload-files.iss'
 $utf8Bom = [System.Text.UTF8Encoding]::new($true)
@@ -151,7 +214,7 @@ $payloadFiles = foreach ($relativePath in $selectedFiles) {
 }
 foreach ($extra in @(
     @{ Source=(Join-Path $resourceRoot 'casc.ico'); Destination='resources\casc.ico' },
-    @{ Source=(Join-Path $projectRoot 'installer\软件介绍.txt'); Destination='软件介绍.txt' }
+    @{ Source=$introductionPath; Destination='软件介绍.txt' }
 )) {
     $payloadFiles += [ordered]@{ Path=$extra.Destination; Bytes=(Get-Item -LiteralPath $extra.Source).Length; Sha256=(Get-FileHash -LiteralPath $extra.Source -Algorithm SHA256).Hash }
 }
@@ -160,6 +223,13 @@ $payloadManifest = [ordered]@{
     Application=$applicationName; ApplicationVersion=$applicationVersion; Qt=$manifest.Qt
     Architecture='x64'; Configuration='Release'; CreatedUtc=[DateTime]::UtcNow.ToString('o')
     FileCount=$payloadFiles.Count; Files=$payloadFiles
+}
+if ($isWindows7) {
+    $payloadManifest.TargetWindows = 'Windows7SP1'
+    $payloadManifest.MinimumWindowsVersion = '6.1sp1'
+    $payloadManifest.ApplicationLocalUcrt = $true
+    $payloadManifest.UcrtVersion = $manifest.UcrtVersion
+    $payloadManifest.UcrtDllCount = $ucrtEntries.Count
 }
 [System.IO.File]::WriteAllText($payloadManifestPath, ($payloadManifest | ConvertTo-Json -Depth 5), $utf8Bom)
 Write-Host "Validated $($payloadFiles.Count) approved payload files ($($manifest.Qt), x64 Release)."
@@ -180,10 +250,34 @@ if (-not $InnoCompiler -or -not (Test-Path -LiteralPath $InnoCompiler -PathType 
     throw 'Inno Setup compiler not found. Supply -InnoCompiler with the existing ISCC.exe path.'
 }
 $compiler = (Resolve-Path -LiteralPath $InnoCompiler).ProviderPath
+if ($isWindows7) {
+    # ISCC's PE version is 0.0.0.0; its own help banner identifies the major version.
+    $compilerHelp = (& $compiler '/?' 2>&1 | Out-String)
+    if ($compilerHelp -notmatch '(?m)^Inno Setup ([0-9]+) Command-Line Compiler\s*$' -or $Matches[1] -ne '6') {
+        throw 'Windows7SP1 packaging requires an Inno Setup 6 compiler.'
+    }
+    foreach ($field in @('D3DCompilerSource', 'D3DCompilerSha256')) {
+        if (-not ($manifest.PSObject.Properties.Name -contains $field)) { throw "Win7 build-manifest.json is missing $field." }
+    }
+    if (-not (Test-Path -LiteralPath $manifest.D3DCompilerSource -PathType Leaf)) {
+        throw 'D3DCompilerSource must identify the original Qt 5 downlevel d3dcompiler_47.dll.'
+    }
+    if ((Get-FileHash -LiteralPath $manifest.D3DCompilerSource -Algorithm SHA256).Hash -ne $manifest.D3DCompilerSha256 -or
+        (Get-FileHash -LiteralPath (Join-Path $distRoot 'd3dcompiler_47.dll') -Algorithm SHA256).Hash -ne $manifest.D3DCompilerSha256) {
+        throw 'D3DCompilerSha256 does not match the deployment and original Qt 5 source.'
+    }
+    $auditScript = Join-Path $projectRoot 'scripts\Test-Win7Compatibility.ps1'
+    $auditReport = Join-Path $packagingRoot 'win7-static-audit.json'
+    $powerShell = (Get-Command powershell.exe -ErrorAction Stop).Source
+    & $powerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -File $auditScript `
+        -DistDirectory $distRoot -ReportPath $auditReport `
+        -UcrtReferenceDirectory $manifest.UcrtSourceDirectory -D3DCompilerReference $manifest.D3DCompilerSource
+    if ($LASTEXITCODE -ne 0) { throw "Windows 7 static compatibility audit failed. See $auditReport" }
+}
 $installerPath = Join-Path $outputRoot "$outputBaseName.exe"
 $arguments = @(
     '/Qp', "/DProjectRoot=$projectRoot", "/DPayloadFileList=$fileListPath",
-    "/DQtMajor=$QtMajor", "/DInstallerOutputDirectory=$outputRoot",
+    "/DQtMajor=$QtMajor", "/DTargetWindows=$TargetWindows", "/DInstallerOutputDirectory=$outputRoot",
     "/DInstallerOutputBaseName=$outputBaseName", (Join-Path $projectRoot 'installer\SurfacePathStudio.iss')
 )
 & $compiler @arguments

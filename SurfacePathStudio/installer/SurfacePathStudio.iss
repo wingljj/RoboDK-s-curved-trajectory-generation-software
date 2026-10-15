@@ -14,6 +14,23 @@
 #ifndef QtMajor
   #define QtMajor "5"
 #endif
+#ifndef TargetWindows
+  #define TargetWindows "Windows10"
+#endif
+#if TargetWindows == "Windows7SP1"
+  #if QtMajor != "5"
+    #error "Windows7SP1 requires Qt 5."
+  #endif
+  #define MinimumWindowsVersion "6.1sp1"
+  #define IntroductionFile ProjectRoot + "\installer\软件介绍-Win7SP1.txt"
+  #define TargetDescription "Windows 7 SP1 x64 兼容版"
+#elif TargetWindows == "Windows10"
+  #define MinimumWindowsVersion "10.0"
+  #define IntroductionFile ProjectRoot + "\installer\软件介绍.txt"
+  #define TargetDescription "Windows 10 及以上"
+#else
+  #error "Unsupported TargetWindows."
+#endif
 
 #define AppName "上海卫星装备研究所曲面轨迹生成软件"
 #define AppVersion "0.1.2"
@@ -39,7 +56,11 @@ AppComments=中国航天 · 上海卫星装备研究所总装中心
 VersionInfoVersion={#AppVersion}.0
 VersionInfoProductName={#AppName}
 VersionInfoCompany={#AppPublisher}
+#if TargetWindows == "Windows7SP1"
+VersionInfoDescription={#AppName}安装程序（{#TargetDescription}，Qt{#QtMajor} x64）
+#else
 VersionInfoDescription={#AppName}安装程序（Qt{#QtMajor} x64）
+#endif
 DefaultDirName={localappdata}\Programs\SurfacePathStudio
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=no
@@ -50,20 +71,23 @@ AllowNoIcons=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-MinVersion=10.0
+MinVersion={#MinimumWindowsVersion}
 OutputDir={#InstallerOutputDirectory}
 OutputBaseFilename={#InstallerOutputBaseName}
 Compression=lzma2/max
 SolidCompression=yes
+#if TargetWindows == "Windows7SP1"
+WizardStyle=modern
+#else
 WizardStyle=modern light polar
-WizardResizable=yes
+#endif
 WizardImageFile={#WizardImages}
 WizardSmallImageFile={#SmallImages}
 WizardImageStretch=yes
 WizardImageBackColor=$3D2110
 WizardSmallImageBackColor=white
 SetupIconFile={#ResourceRoot}\casc.ico
-InfoBeforeFile={#ProjectRoot}\installer\软件介绍.txt
+InfoBeforeFile={#IntroductionFile}
 UninstallDisplayName={#AppName}
 UninstallDisplayIcon={app}\resources\casc.ico
 Uninstallable=yes
@@ -77,7 +101,11 @@ Name: "chinesesimp"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Messages]
 WelcomeLabel1=上海卫星装备研究所%n曲面轨迹生成软件安装向导
+#if TargetWindows == "Windows7SP1"
+WelcomeLabel2=中国航天%n上海卫星装备研究所总装中心%n%n本向导将安装 {#AppName} {#AppVersion}（{#TargetDescription}，Qt{#QtMajor} x64）。
+#else
 WelcomeLabel2=中国航天%n上海卫星装备研究所总装中心%n%n本向导将安装 {#AppName} {#AppVersion}（Qt{#QtMajor} x64）。
+#endif
 InfoBeforeLabel=软件介绍
 InfoBeforeClickLabel=阅读软件介绍后，点击“下一步”继续。
 FinishedLabel=已完成 {#AppName} 的安装。%n%n您可以通过开始菜单或桌面快捷方式启动软件，载入 STEP/STP 模型并生成曲面轨迹。
@@ -96,7 +124,7 @@ Name: "desktopicon"; Description: "{cm:DesktopShortcut}"; GroupDescription: "{cm
 [Files]
 #include PayloadFileList
 Source: "{#ProjectRoot}\resources\casc.ico"; DestDir: "{app}\resources"; Flags: ignoreversion
-Source: "{#ProjectRoot}\installer\软件介绍.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#IntroductionFile}"; DestDir: "{app}"; DestName: "软件介绍.txt"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; IconFilename: "{app}\resources\casc.ico"; Comment: "中国航天 · {#AppPublisher}"

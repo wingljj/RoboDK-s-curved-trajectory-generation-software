@@ -24,6 +24,13 @@ The local deployment includes the x64 Release CRT DLLs from the installed
 Visual Studio 2019 toolchain's redistributable directory. They remain subject
 to Microsoft's Visual Studio license and redistributable terms.
 
+The Windows 7 SP1 compatibility distribution additionally includes the complete
+x64 application-local Universal CRT set from the installed Windows SDK
+10.0.19041.0 redistributable directory. It uses the downlevel D3DCompiler supplied
+with the installed Qt 5 SDK. These Microsoft redistributables retain their own
+license terms; their original files are copied without binary modifications.
+Deployment guidance: https://learn.microsoft.com/en-us/cpp/windows/universal-crt-deployment
+
 ## Research references
 
 gkv311/occt-samples-qt (MIT) and fougue/mayo (BSD-2-Clause) were researched for

@@ -6,6 +6,9 @@
 Windows x64 安装包由 Inno Setup 构建，说明与复现命令见 [安装与打包](docs/installation.md)。
 当前品牌版本的独立运行目录为 `dist-branding-qt5` 和 `dist-branding-qt6`。
 
+Windows 7 SP1 64 位兼容构建使用 `dist-win7-x64`，Qt 5.15 / MSVC 2019，随包提供完整应用本地 UCRT。
+构建命令、目标系统要求及验证边界见 [Windows 7 兼容版说明](docs/windows7.md)。
+
 独立的 C++17 / Qt Widgets / Open CASCADE 桌面 CAD 曲面路径软件。
 输入 STEP/STP，直接选择真正的 `TopoDS_Face`，通过修剪 B-Rep 与平行平面
 求交生成曲面路径，再计算 CAD 法向与 TCP 姿态。显示允许 OCCT 三角化；

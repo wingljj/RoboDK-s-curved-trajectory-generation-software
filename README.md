@@ -14,6 +14,10 @@
 开始菜单提供启动、软件介绍和卸载入口，可选桌面快捷方式。
 详细步骤见 [安装说明](SurfacePathStudio/docs/installation.md)。
 
+Windows 7 SP1 64 位使用单独的 [Win7 兼容版](https://github.com/wingljj/RoboDK-s-curved-trajectory-generation-software/releases/tag/v0.1.2-win7)，
+附带离线 UCRT 运行库。该构建已通过静态依赖检查和当前开发机上的功能回归；尚未在 Win7 实机或虚拟机验收。
+环境要求、构建与验收方法见 [Windows 7 说明](SurfacePathStudio/docs/windows7.md)。
+
 ## 功能
 
 - STEP/STP 导入和拖放，支持中文路径、装配层次、CAD Face 选择与高亮。

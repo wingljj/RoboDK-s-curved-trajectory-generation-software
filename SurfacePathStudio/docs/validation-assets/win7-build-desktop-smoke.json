@@ -1,0 +1,74 @@
+{
+    "aboutDialog": true,
+    "applicationVersion": "0.1.2",
+    "busyDropsRejected": true,
+    "cadEdgeDirection": true,
+    "continuousCsv": true,
+    "csvExport": true,
+    "ctrlMultiSelection": true,
+    "defaultPathDiagnostics": true,
+    "displayedObjects": [
+        {
+            "faceSensitiveEntities": 2,
+            "modes": [
+                4
+            ],
+            "state": 1,
+            "type": "XCAFPrs_AISObject"
+        },
+        {
+            "faceSensitiveEntities": -1,
+            "modes": [
+            ],
+            "state": -1,
+            "type": "AIS_Shape"
+        }
+    ],
+    "dropReplacesProject": true,
+    "escapeAndSelectionUndo": true,
+    "faceCount": 2,
+    "firstPickDiagnostics": {
+        "devicePixelRatio": 2,
+        "faceId": 1,
+        "ownerHasShape": true,
+        "pickedCount": 1,
+        "screen": [
+            644,
+            693
+        ],
+        "shapeType": 4,
+        "widget": [
+            876,
+            828
+        ]
+    },
+    "generatedTrajectoryAndNormals": true,
+    "hostOs": "Windows 10 Version 2009",
+    "hostOsVersion": "10.0.26200",
+    "invalidDropsRejected": true,
+    "maxSurfaceErrorMm": 5.9050552935138654e-08,
+    "mouseFaceSelection": true,
+    "openGlDiagnostics": {
+        "GLSLversion": "4.60",
+        "GLdevice": "AMD Radeon RX 6600 XT",
+        "GLvendor": "ATI Technologies Inc.",
+        "GLversion": "4.6.0 Compatibility Profile Context 25.10.30.02.250923"
+    },
+    "passed": true,
+    "pathVisibility": true,
+    "pointCount": 499,
+    "productBranding": true,
+    "productName": "上海卫星装备研究所曲面轨迹生成软件",
+    "projectTreeAndUndo": true,
+    "qtVersion": "5.15.0",
+    "ranOnWindows7": false,
+    "segmentCount": 17,
+    "stepDragDrop": true,
+    "stepImport": true,
+    "surfacePath": true,
+    "tangentFaces": true,
+    "targetWindows": "Windows7SP1",
+    "tcpFrames": true,
+    "twoPointDirection": true,
+    "uiHeartbeats": 10
+}
